@@ -7,6 +7,8 @@ TagManager:
   - Item
   - SavePoint
   - Door
+  - Puzzle
+  - NPC
   layers:
   - Default
   - TransparentFX
@@ -17,8 +19,8 @@ TagManager:
   - Item
   - Walls
   - Ground
-  - 
-  - 
+  - Puzzle
+  - NPC
   - 
   - 
   - 

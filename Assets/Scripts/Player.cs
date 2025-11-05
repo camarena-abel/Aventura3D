@@ -10,6 +10,8 @@ public class Player : MonoBehaviour
     float axisV;
     float cameraPitchAngle = 0f;
     GameObject lastTarget;
+    bool userDialogAction = false;
+    bool lockedMovement = false;
 
     [SerializeField]
     Transform camera;
@@ -65,6 +67,26 @@ public class Player : MonoBehaviour
         }
     }
 
+    void RemoveSelectedInvItem()
+    {
+        string itemGuid = GetInvSelItemGUID();
+        if (itemGuid != "")
+        {
+            GameState.gameData.RemoveItemFromInventory(itemGuid);
+            GameState.gameData.invSelItemIndex = 0;
+            UpdateSelectedInvItem();
+        }
+    }
+
+    public bool OnUserDialogAction()
+    {
+        return userDialogAction;
+    }
+
+    public void LockMovement(bool enambled)
+    {
+        lockedMovement = enambled;
+    }
 
     void Update()
     {
@@ -91,13 +113,28 @@ public class Player : MonoBehaviour
             if (hitInfo.collider.gameObject.tag == "Item")
             {
                 lastTarget = hitInfo.collider.gameObject;
-                targetName = hitInfo.collider.gameObject.name;
+                Item item = lastTarget.GetComponent<Item>();
+                targetName = item.info.name; // hitInfo.collider.gameObject.name;
             }
 
             if (hitInfo.collider.gameObject.tag == "Door")
             {
                 lastTarget = hitInfo.collider.gameObject;
                 targetName = "Puerta";
+            }
+
+            if (hitInfo.collider.gameObject.tag == "Puzzle")
+            {
+                lastTarget = hitInfo.collider.gameObject;
+                Puzzle puzzle = lastTarget.GetComponent<Puzzle>();
+                targetName = puzzle.PuzzleName;
+            }
+
+            if (hitInfo.collider.gameObject.tag == "NPC")
+            {
+                lastTarget = hitInfo.collider.gameObject;
+                NPC_X npc = lastTarget.GetComponent<NPC_X>();
+                targetName = npc.NpcName;
             }
         }
         if (targetName != txtTarget.text)
@@ -124,19 +161,50 @@ public class Player : MonoBehaviour
                     Door door = lastTarget.transform.parent.GetComponent<Door>();
                     door.TryToOpen(GetInvSelItemGUID());
                 }
+
+                if (lastTarget.tag == "Puzzle")
+                {
+                    Puzzle puzzle = lastTarget.GetComponent<Puzzle>();
+                    puzzle.TryToResolve(GetInvSelItemGUID());
+                    if (puzzle.RemoveItemWhenUsed)
+                    {
+                        RemoveSelectedInvItem();
+                    }
+                }
+
+                if (lastTarget.tag == "NPC")
+                {
+                    NPC_X npc = lastTarget.GetComponent<NPC_X>();
+                    npc.StartDialog();
+                }
             }
         }
 
         // si pulsa otro boton de accion, que cambia el item seleccionado en el inventario
         if (Input.GetButtonDown("Fire2"))
         {
-            GameState.gameData.invSelItemIndex = (GameState.gameData.invSelItemIndex + 1) % GameState.gameData.inventory.Count;
-            UpdateSelectedInvItem();
+            if (GameState.gameData.inventory.Count > 0)
+            {
+                GameState.gameData.invSelItemIndex = (GameState.gameData.invSelItemIndex + 1) % GameState.gameData.inventory.Count;
+                UpdateSelectedInvItem();
+            }
+        }
+
+        // si pulsa el boton de accion para cambiar de dialogo
+        userDialogAction = false;
+        if (Input.GetButtonDown("Fire3"))
+        {
+            userDialogAction = true;
         }
     }
 
     void FixedUpdate()
     {
+        // si el movimiento esta bloqueado, salimos de aqui
+        if (lockedMovement)
+            return;
+
+        // movimiento (translacion)
         Vector3 newPos = transform.position + ((transform.forward * axisV) + (transform.right * axisH)) * speed * Time.fixedDeltaTime;
         rb.MovePosition(newPos);
     }

@@ -32,6 +32,11 @@ public class GameData
         inventory.Add(guid);
     }
 
+    public void RemoveItemFromInventory(string guid)
+    {
+        inventory.RemoveAt(inventory.IndexOf(guid));
+    }
+
 }
 
 public static class GameState
