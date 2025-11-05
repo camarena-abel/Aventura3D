@@ -114,7 +114,7 @@ public class Player : MonoBehaviour
             {
                 lastTarget = hitInfo.collider.gameObject;
                 Item item = lastTarget.GetComponent<Item>();
-                targetName = item.info.name; // hitInfo.collider.gameObject.name;
+                targetName = item.info.title; // hitInfo.collider.gameObject.name;
             }
 
             if (hitInfo.collider.gameObject.tag == "Door")

@@ -31,6 +31,12 @@ public abstract class NPC_X : MonoBehaviour
     [SerializeField]
     protected Player player;
 
+    [SerializeField]
+    float rotSpeed = 90f;
+
+    [SerializeField]
+    float playerLookAtDistance = 3f;
+
     public string NpcName { get => npcName; }
 
     public abstract void StartDialog();
@@ -47,5 +53,19 @@ public abstract class NPC_X : MonoBehaviour
         dlgMan.SetMessage(color, NpcName, msg);
         yield return new WaitUntil(() => player.OnUserDialogAction());
         yield return null;
+    }
+
+    private void Update()
+    {
+        // calculamos la distancia entre el NPC y el player
+        Vector3 diff = player.transform.position - transform.position;
+        float d = diff.magnitude;
+        if (d < playerLookAtDistance) // si esta cerca del  player...
+        {
+            // que se gire en dirección al player
+            Quaternion q = Quaternion.LookRotation(diff);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, q, rotSpeed * Time.deltaTime);
+        }
+
     }
 }
