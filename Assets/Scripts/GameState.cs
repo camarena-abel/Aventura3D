@@ -12,6 +12,8 @@ public class GameData
     public List<string> pickedItems;
     public int invSelItemIndex; // indice del item seleccionado en el inventario
     public List<string> inventory;
+    public List<string> resolvedPuzzles;
+    public List<string> processedDialogs;
 
     public GameData()
     {
@@ -20,6 +22,8 @@ public class GameData
         pickedItems = new List<string>();
         invSelItemIndex = 0;
         inventory = new List<string>();
+        resolvedPuzzles = new List<string>();
+        processedDialogs = new List<string>();
     }
 
     public void AddPickedItem(string guid)
@@ -31,12 +35,34 @@ public class GameData
     {
         inventory.Add(guid);
     }
+    public bool CheckInventoryItem(string guid)
+    {
+        return inventory.Contains(guid);
+    }
 
     public void RemoveItemFromInventory(string guid)
     {
         inventory.RemoveAt(inventory.IndexOf(guid));
     }
+    public void AddResolvedPuzzle(string guid)
+    {
+        resolvedPuzzles.Add(guid);
+    }
 
+    public bool CheckResolvedPuzzle(string guid)
+    {
+        return resolvedPuzzles.Contains(guid); 
+    }
+
+    public void AddProcessedDialog(string guid)
+    {
+        processedDialogs.Add(guid);
+    }
+
+    public bool CheckProcessedDialog(string guid)
+    {
+        return processedDialogs.Contains(guid);
+    }
 }
 
 public static class GameState
@@ -50,6 +76,7 @@ public static class GameState
     public static void Save()
     {
         string json = JsonUtility.ToJson(gameData);
+        Debug.Log(sgPath);
         File.WriteAllText(sgPath, json);
     }
 

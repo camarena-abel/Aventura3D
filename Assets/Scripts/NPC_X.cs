@@ -55,6 +55,12 @@ public abstract class NPC_X : MonoBehaviour
         yield return null;
     }
 
+    protected IEnumerator ConfirmDialog()
+    {
+        dlgMan.ShowConfirm();
+        yield return new WaitUntil(() => dlgMan.Confirmed());
+    }
+
     private void Update()
     {
         // calculamos la distancia entre el NPC y el player

@@ -54,7 +54,7 @@ public class Player : MonoBehaviour
         return "";
     }
 
-    void UpdateSelectedInvItem()
+    public void UpdateSelectedInvItem()
     {
         string itemGuid = GetInvSelItemGUID();
         if (itemGuid != "")
