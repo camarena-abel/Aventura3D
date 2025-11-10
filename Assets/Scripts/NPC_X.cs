@@ -17,6 +17,7 @@ CoRutinas
 
 public abstract class NPC_X : MonoBehaviour
 {
+    protected Animator animator;
     public static Color PlayerColor = Color.green;
 
     [SerializeField]
@@ -73,5 +74,10 @@ public abstract class NPC_X : MonoBehaviour
             transform.rotation = Quaternion.RotateTowards(transform.rotation, q, rotSpeed * Time.deltaTime);
         }
 
+    }
+
+    private void Start()
+    {
+        animator = transform.GetChild(0).GetComponent<Animator>();
     }
 }

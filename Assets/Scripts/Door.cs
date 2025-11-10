@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class Door : MonoBehaviour
 {
+    AudioSource audio;
     Animator animator;
 
     [SerializeField]
@@ -9,6 +10,7 @@ public class Door : MonoBehaviour
 
     void Start()
     {
+        audio = GetComponent<AudioSource>();
         animator = GetComponent<Animator>();
     }
 
@@ -24,5 +26,6 @@ public class Door : MonoBehaviour
 
         // abrimos la puerta
         animator.SetTrigger("Open");
+        audio.Play();
     }
 }

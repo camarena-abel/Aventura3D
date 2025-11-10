@@ -31,6 +31,7 @@ public class NPC_A : NPC_X
             yield return StartCoroutine(NPCDialog("gracias!"));
             GameState.gameData.RemoveItemFromInventory(ITEM_POCION);
             player.UpdateSelectedInvItem();
+            animator.SetTrigger("Happy");
         } else
         {
             yield return StartCoroutine(PlayerDialog("uy! no se, le he cogido cariño"));

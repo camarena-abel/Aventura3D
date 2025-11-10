@@ -5,10 +5,12 @@ using Unity.VisualScripting;
 
 public class Player : MonoBehaviour
 {
+    AudioSource audio;
     Rigidbody rb;
     float axisH;
     float axisV;
     float cameraPitchAngle = 0f;
+    float footStepsTime = 0f;
     GameObject lastTarget;
     bool userDialogAction = false;
     bool lockedMovement = false;
@@ -37,9 +39,16 @@ public class Player : MonoBehaviour
     [SerializeField]
     ItemDB itemDB;
 
+    [SerializeField]
+    AudioClip soundPickItem;
+
+    [SerializeField]
+    AudioClip[] soundFootSteps;
+
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+        audio = GetComponent<AudioSource>();
         rb = GetComponent<Rigidbody>();
         UpdateSelectedInvItem();
     }
@@ -147,6 +156,7 @@ public class Player : MonoBehaviour
         {
             if (lastTarget)
             {
+                // coger un item del escenario
                 if (lastTarget.tag == "Item")
                 {
                     Item item = lastTarget.GetComponent<Item>();
@@ -154,6 +164,9 @@ public class Player : MonoBehaviour
                     GameState.gameData.AddPickedItem(item.instanceGUID);
                     UpdateSelectedInvItem();
                     Destroy(lastTarget);
+                    // hacemos el sonido de recoger el item
+                    audio.pitch = Random.Range(0.75f, 1.5f);
+                    audio.PlayOneShot(soundPickItem);
                 }
 
                 if (lastTarget.tag == "Door")
@@ -205,14 +218,31 @@ public class Player : MonoBehaviour
             return;
 
         // movimiento (translacion)
-        Vector3 newPos = transform.position + ((transform.forward * axisV) + (transform.right * axisH)) * speed * Time.fixedDeltaTime;
+        Vector3 displacement = ((transform.forward * axisV) + (transform.right * axisH)) * speed * Time.fixedDeltaTime;
+        Vector3 newPos = transform.position + displacement;
         rb.MovePosition(newPos);
+
+        // contador para las pisadas
+        footStepsTime -= displacement.magnitude;
+        if (footStepsTime <= 0f)
+        {
+            int randomFootStepIndex = Random.Range(0, soundFootSteps.Length-1);
+            audio.pitch = 1f;
+            audio.PlayOneShot(soundFootSteps[randomFootStepIndex]);
+            footStepsTime = 2f;
+        }
+        
+
+
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.tag == "SavePoint")
         {
+            // hacemos un sonido
+            SavePoint sp = other.GetComponent<SavePoint>();
+            sp.PlaySound();
             // guardamos la partida
             GameState.Save();
         }
