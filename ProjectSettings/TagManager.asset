@@ -9,6 +9,8 @@ TagManager:
   - Door
   - Puzzle
   - NPC
+  - Pickable
+  - Enemy
   layers:
   - Default
   - TransparentFX
@@ -21,8 +23,8 @@ TagManager:
   - Ground
   - Puzzle
   - NPC
-  - 
-  - 
+  - Pickable
+  - Enemy
   - 
   - 
   - 

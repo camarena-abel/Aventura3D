@@ -9,6 +9,9 @@ public class EnemyX : MonoBehaviour
     protected bool targetFound = false;
 
     [SerializeField]
+    int life = 100;
+
+    [SerializeField]
     float setDestMaxTime = 2f;
 
     [SerializeField]
@@ -21,8 +24,39 @@ public class EnemyX : MonoBehaviour
         setDestinationTime = setDestMaxTime;
     }
 
+    public bool IsDead()
+    {
+        return life <= 0;
+    }
+
+    public void TakeDamage(int amount)
+    {
+        if (IsDead())
+        {
+            // lo que esta muerto no puede morir!
+            return;
+        }
+
+        life -= amount;
+        if (life <= 0)
+        {
+            // muerto!
+            animator.SetTrigger("Death");
+            agent.isStopped = true;
+            agent.enabled = false;
+            Destroy(gameObject, 5f);
+        } else
+        {
+            animator.SetTrigger("Hit");
+        }
+    }
+
     private void Update()
     {
+        // si esta muerto, no se puede mover
+        if (IsDead())
+            return;
+
         float speed = agent.velocity.magnitude;
         animator.SetFloat("Speed", speed);
 

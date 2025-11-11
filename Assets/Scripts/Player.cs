@@ -14,6 +14,8 @@ public class Player : MonoBehaviour
     GameObject lastTarget;
     bool userDialogAction = false;
     bool lockedMovement = false;
+    bool holdingSomething = false;
+    Transform holdedObjectOriginalParent;
 
     [SerializeField]
     Transform camera;
@@ -40,10 +42,22 @@ public class Player : MonoBehaviour
     ItemDB itemDB;
 
     [SerializeField]
+    AudioClip soundShoot;
+
+    [SerializeField]
     AudioClip soundPickItem;
 
     [SerializeField]
     AudioClip[] soundFootSteps;
+
+    [SerializeField]
+    Transform holdPosition;
+
+    [SerializeField]
+    DialogManager dialogManager;
+
+    [SerializeField]
+    LayerMask shotLayers; // contra que capas colisiona el disparo
 
     void Start()
     {
@@ -117,6 +131,7 @@ public class Player : MonoBehaviour
         lastTarget = null;
         string targetName = "";
         RaycastHit hitInfo;
+        Physics.queriesHitTriggers = true;
         if (Physics.Raycast(camera.position, camera.forward, out hitInfo, targetMaxDist, targetLayers))
         {
             if (hitInfo.collider.gameObject.tag == "Item")
@@ -145,6 +160,12 @@ public class Player : MonoBehaviour
                 NPC_X npc = lastTarget.GetComponent<NPC_X>();
                 targetName = npc.NpcName;
             }
+
+            if (hitInfo.collider.gameObject.tag == "Pickable")
+            {
+                lastTarget = hitInfo.collider.gameObject;
+                targetName = lastTarget.gameObject.name;
+            }
         }
         if (targetName != txtTarget.text)
         {
@@ -154,6 +175,17 @@ public class Player : MonoBehaviour
         // si pulsa el boton de accion, recoge el objeto
         if (Input.GetButtonDown("Fire1"))
         {
+            if (holdingSomething)
+            {
+                Transform ho = holdPosition.GetChild(0);
+                Rigidbody rb = ho.GetComponent<Rigidbody>();
+                rb.isKinematic = false;
+                Collider col = ho.GetComponent<Collider>();
+                col.enabled = true;
+                ho.transform.SetParent(holdedObjectOriginalParent);
+                holdingSomething = false;
+            }
+
             if (lastTarget)
             {
                 // coger un item del escenario
@@ -190,6 +222,22 @@ public class Player : MonoBehaviour
                     NPC_X npc = lastTarget.GetComponent<NPC_X>();
                     npc.StartDialog();
                 }
+
+                if (lastTarget.tag == "Pickable")
+                {
+                    if (!holdingSomething)
+                    {
+                        holdedObjectOriginalParent = lastTarget.transform.parent;
+                        lastTarget.transform.SetParent(holdPosition);
+                        Rigidbody rb = lastTarget.GetComponent<Rigidbody>();
+                        rb.isKinematic = true;
+                        Collider col = lastTarget.GetComponent<Collider>();
+                        col.enabled = false;
+                        lastTarget.transform.localPosition = Vector3.zero;
+                        lastTarget.transform.localRotation = Quaternion.identity;
+                        holdingSomething = true;
+                    }
+                }
             }
         }
 
@@ -207,7 +255,30 @@ public class Player : MonoBehaviour
         userDialogAction = false;
         if (Input.GetButtonDown("Fire3"))
         {
-            userDialogAction = true;
+            if (dialogManager.IsDialogsActive())
+            {
+                // siguiente dialogo
+                userDialogAction = true;
+            } else
+            {
+                // disparo de arma de fuego
+                RaycastHit shotInfo;
+                Physics.queriesHitTriggers = false;
+                if (Physics.Raycast(camera.position, camera.forward, out shotInfo, Mathf.Infinity, shotLayers))
+                {
+                    if (shotInfo.collider.gameObject.tag == "Enemy")
+                    {
+                        EnemyX enemy = shotInfo.collider.GetComponent<EnemyX>();
+                        enemy.TakeDamage(25);
+
+                        // hacemos el sonido de recoger el item
+                        audio.pitch = Random.Range(0.75f, 1.5f);
+                        audio.PlayOneShot(soundShoot);
+                    }                        
+
+                }
+            }
+
         }
     }
 
