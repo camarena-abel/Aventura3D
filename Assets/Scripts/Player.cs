@@ -1,7 +1,8 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using Unity.VisualScripting;
+using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
@@ -15,6 +16,7 @@ public class Player : MonoBehaviour
     bool userDialogAction = false;
     bool lockedMovement = false;
     bool holdingSomething = false;
+    bool isDead = false;
     Transform holdedObjectOriginalParent;
 
     [SerializeField]
@@ -39,6 +41,9 @@ public class Player : MonoBehaviour
     Image imgIcono;
 
     [SerializeField]
+    GameOver gameOver;
+
+    [SerializeField]
     ItemDB itemDB;
 
     [SerializeField]
@@ -49,6 +54,9 @@ public class Player : MonoBehaviour
 
     [SerializeField]
     AudioClip[] soundFootSteps;
+
+    [SerializeField]
+    AudioClip soundHit;
 
     [SerializeField]
     Transform holdPosition;
@@ -273,7 +281,7 @@ public class Player : MonoBehaviour
 
                         // hacemos el sonido de recoger el item
                         audio.pitch = Random.Range(0.75f, 1.5f);
-                        audio.PlayOneShot(soundShoot);
+                        audio.PlayOneShot(soundShoot);                        
                     }                        
 
                 }
@@ -317,5 +325,35 @@ public class Player : MonoBehaviour
             // guardamos la partida
             GameState.Save();
         }
+    }
+
+    public void ReceiveDamage(int amount)
+    {
+        GameState.gameData.life -= amount;
+        audio.PlayOneShot(soundHit);
+        if (GameState.gameData.life <= 0)
+        {
+            GameOver();
+        }
+    }
+
+    public bool IsDead()
+    {
+        return isDead;
+    }
+
+    IEnumerator FinalizarJuego()
+    {
+        yield return new WaitForSeconds(5f);
+        SceneManager.LoadScene("MainMenu");
+        yield break;
+    }
+
+    private void GameOver()
+    {        
+        lockedMovement = true;
+        isDead = true;
+        gameOver.Play();
+        StartCoroutine(FinalizarJuego());
     }
 }
