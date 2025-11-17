@@ -27,18 +27,24 @@ public class SoundManager : MonoBehaviour
 
     private void Start()
     {
-        masterVolume.value = PlayerPrefs.GetFloat("VolMaster");
-        musicVolume.value = PlayerPrefs.GetFloat("VolMusic");
-        soundsVolume.value = PlayerPrefs.GetFloat("VolSounds");
+        if (masterVolume)
+            masterVolume.value = PlayerPrefs.GetFloat("VolMaster");
+        if (musicVolume)
+            musicVolume.value = PlayerPrefs.GetFloat("VolMusic");
+        if (soundsVolume)
+            soundsVolume.value = PlayerPrefs.GetFloat("VolSounds");
         UpdateMixer();
         loading = false;
     }
 
     private void UpdateMixer()
     {
-        mixer.SetFloat("VolMaster", masterVolume.value);
-        mixer.SetFloat("VolMusic", musicVolume.value);
-        mixer.SetFloat("VolSounds", soundsVolume.value);
+        if (masterVolume)
+            mixer.SetFloat("VolMaster", masterVolume.value);
+        if (musicVolume)
+            mixer.SetFloat("VolMusic", musicVolume.value);
+        if (soundsVolume)
+            mixer.SetFloat("VolSounds", soundsVolume.value);
     }
 
     public void OnChangeVolume()

@@ -6,12 +6,13 @@ using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
-    AudioSource audio;
+    AudioSource audioSrc;
     Rigidbody rb;
     float axisH;
     float axisV;
     float cameraPitchAngle = 0f;
     float footStepsTime = 0f;
+    float shootReloadTime = 0f;
     GameObject lastTarget;
     bool userDialogAction = false;
     bool lockedMovement = false;
@@ -20,7 +21,7 @@ public class Player : MonoBehaviour
     Transform holdedObjectOriginalParent;
 
     [SerializeField]
-    Transform camera;
+    Transform playerCamera;
 
     [SerializeField]
     float speed = 2f;
@@ -30,6 +31,9 @@ public class Player : MonoBehaviour
 
     [SerializeField]
     float targetMaxDist = 3f;
+
+    [SerializeField]
+    float shootMaxRealoadTime = 0.5f;
 
     [SerializeField]
     LayerMask targetLayers; // contra que capas colisiona el rayo de la camara
@@ -67,10 +71,13 @@ public class Player : MonoBehaviour
     [SerializeField]
     LayerMask shotLayers; // contra que capas colisiona el disparo
 
+    [SerializeField]
+    GameObject shotImpactPS;
+
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
-        audio = GetComponent<AudioSource>();
+        audioSrc = GetComponent<AudioSource>();
         rb = GetComponent<Rigidbody>();
         UpdateSelectedInvItem();
     }
@@ -94,7 +101,11 @@ public class Player : MonoBehaviour
             if (info)
             {
                 imgIcono.sprite = info.icono;
+                imgIcono.gameObject.SetActive(true);
             }
+        } else
+        {
+            imgIcono.gameObject.SetActive(false);
         }
     }
 
@@ -133,14 +144,18 @@ public class Player : MonoBehaviour
 
         // rotacion de la camara en el eje X (pitch)
         cameraPitchAngle = Mathf.Clamp(cameraPitchAngle - mouseY, -75f, 75f);
-        camera.localRotation = Quaternion.Euler(cameraPitchAngle, 0f, 0f);
+        playerCamera.localRotation = Quaternion.Euler(cameraPitchAngle, 0f, 0f);
+
+        // si esta muerto que no haga nada mas
+        if (IsDead())
+            return;
 
         // lanzamos un rayo desde la camara para ver si hay algo interesante delante nuestro
         lastTarget = null;
         string targetName = "";
         RaycastHit hitInfo;
         Physics.queriesHitTriggers = true;
-        if (Physics.Raycast(camera.position, camera.forward, out hitInfo, targetMaxDist, targetLayers))
+        if (Physics.Raycast(playerCamera.position, playerCamera.forward, out hitInfo, targetMaxDist, targetLayers))
         {
             if (hitInfo.collider.gameObject.tag == "Item")
             {
@@ -205,8 +220,8 @@ public class Player : MonoBehaviour
                     UpdateSelectedInvItem();
                     Destroy(lastTarget);
                     // hacemos el sonido de recoger el item
-                    audio.pitch = Random.Range(0.75f, 1.5f);
-                    audio.PlayOneShot(soundPickItem);
+                    audioSrc.pitch = Random.Range(0.75f, 1.5f);
+                    audioSrc.PlayOneShot(soundPickItem);
                 }
 
                 if (lastTarget.tag == "Door")
@@ -261,6 +276,7 @@ public class Player : MonoBehaviour
 
         // si pulsa el boton de accion para cambiar de dialogo
         userDialogAction = false;
+        shootReloadTime -= Time.deltaTime;
         if (Input.GetButtonDown("Fire3"))
         {
             if (dialogManager.IsDialogsActive())
@@ -269,21 +285,29 @@ public class Player : MonoBehaviour
                 userDialogAction = true;
             } else
             {
-                // disparo de arma de fuego
-                RaycastHit shotInfo;
-                Physics.queriesHitTriggers = false;
-                if (Physics.Raycast(camera.position, camera.forward, out shotInfo, Mathf.Infinity, shotLayers))
+                if (shootReloadTime <= 0f)
                 {
-                    if (shotInfo.collider.gameObject.tag == "Enemy")
+                    // disparo de arma de fuego
+                    shootReloadTime = shootMaxRealoadTime;
+                    RaycastHit shotInfo;
+                    Physics.queriesHitTriggers = false;
+                    if (Physics.Raycast(playerCamera.position, playerCamera.forward, out shotInfo, Mathf.Infinity, shotLayers))
                     {
-                        EnemyX enemy = shotInfo.collider.GetComponent<EnemyX>();
-                        enemy.TakeDamage(25);
+                        if (shotInfo.collider.gameObject.tag == "Enemy")
+                        {
+                            EnemyX enemy = shotInfo.collider.GetComponent<EnemyX>();
+                            enemy.TakeDamage(25);
+                        }
+                    }
 
-                        // hacemos el sonido de recoger el item
-                        audio.pitch = Random.Range(0.75f, 1.5f);
-                        audio.PlayOneShot(soundShoot);                        
-                    }                        
+                    // hacemos el sonido del disparo
+                    audioSrc.pitch = Random.Range(0.75f, 1.5f);
+                    audioSrc.PlayOneShot(soundShoot);
 
+                    // sistema de particulas
+                    GameObject impact = Instantiate(shotImpactPS, shotInfo.point, Quaternion.identity);
+                    Destroy(impact, 3f);
+            
                 }
             }
 
@@ -292,6 +316,10 @@ public class Player : MonoBehaviour
 
     void FixedUpdate()
     {
+        // si esta muerto que no haga nada mas
+        if (IsDead())
+            return;
+
         // si el movimiento esta bloqueado, salimos de aqui
         if (lockedMovement)
             return;
@@ -306,8 +334,8 @@ public class Player : MonoBehaviour
         if (footStepsTime <= 0f)
         {
             int randomFootStepIndex = Random.Range(0, soundFootSteps.Length-1);
-            audio.pitch = 1f;
-            audio.PlayOneShot(soundFootSteps[randomFootStepIndex]);
+            audioSrc.pitch = 1f;
+            audioSrc.PlayOneShot(soundFootSteps[randomFootStepIndex]);
             footStepsTime = 2f;
         }
         
@@ -317,6 +345,11 @@ public class Player : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        // si esta muerto que no haga nada mas
+        if (IsDead())
+            return;
+
+        // es una zona de guardado de partida
         if (other.gameObject.tag == "SavePoint")
         {
             // hacemos un sonido
@@ -329,8 +362,15 @@ public class Player : MonoBehaviour
 
     public void ReceiveDamage(int amount)
     {
+        // si esta muerto que no haga nada mas
+        if (IsDead())
+            return;
+
+        // reducir cantidad de vida
         GameState.gameData.life -= amount;
-        audio.PlayOneShot(soundHit);
+        audioSrc.PlayOneShot(soundHit);
+
+        // si se queda sin vida, game over
         if (GameState.gameData.life <= 0)
         {
             GameOver();

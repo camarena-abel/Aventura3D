@@ -2,15 +2,10 @@ using UnityEngine;
 
 public class GameOver : MonoBehaviour
 {
-    Animator animator;
-
-    void Start()
-    {
-        animator = GetComponent<Animator>();
-    }
 
     public void Play()
     {
+        Animator animator = GetComponent<Animator>();
         transform.gameObject.SetActive(true);
         animator.SetTrigger("Play");
     }

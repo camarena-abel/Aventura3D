@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class Item : MonoBehaviour
 {
-    private MeshRenderer renderer;
+    private MeshRenderer meshRenderer;
     private Material material;
     public string instanceGUID; // identificador de esta instancia del objeto
     public ItemInfo info;
@@ -17,8 +17,8 @@ public class Item : MonoBehaviour
         }
 
         // accedemos al mesh renderer del primer hijo
-        renderer = transform.GetChild(0).GetComponent<MeshRenderer>();
-        material = renderer.material;
+        meshRenderer = transform.GetChild(0).GetComponent<MeshRenderer>();
+        material = meshRenderer.material;
         material.EnableKeyword("_EMISSION");
     }
 

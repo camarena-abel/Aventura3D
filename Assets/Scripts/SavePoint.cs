@@ -2,15 +2,15 @@ using UnityEngine;
 
 public class SavePoint : MonoBehaviour
 {
-    AudioSource audio;
+    AudioSource audioSrc;
 
     void Start()
     {
-        audio = GetComponent<AudioSource>();
+        audioSrc = GetComponent<AudioSource>();
     }
 
     public void PlaySound()
     {
-        audio.Play();
+        audioSrc.Play();
     }
 }

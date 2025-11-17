@@ -6,9 +6,17 @@ public class EnemyA : EnemyX
     Vector3 raySource = Vector3.zero;
     Vector3 rayTarget = Vector3.zero;
 
+    [SerializeField]
+    float attackRadius = 0.5f;
 
     [SerializeField]
     LayerMask detectionRayMask;
+
+    [SerializeField]
+    float attackForward = 1f; // para calcular la posicion donde hará daño
+
+    [SerializeField]
+    float attackUp = 1f;       // para calcular la posicion donde hará daño
 
     private void OnTriggerStay(Collider other)
     {
@@ -46,6 +54,19 @@ public class EnemyA : EnemyX
     {
         Gizmos.color = Color.red;
         Gizmos.DrawLine(raySource, rayTarget);
+    }
+
+    public void Attack()
+    {
+        // comprobamos si delante del enemigo hay algun collider de tipo player
+        Vector3 attackPos = transform.position + transform.forward * attackForward + transform.up * attackUp;
+        Collider[] col = Physics.OverlapSphere(attackPos, attackRadius, attackLayerMask);
+        if (col.Length > 0)
+        {
+            // hemos golpeado al player!
+            Player play = target.GetComponent<Player>();
+            play.ReceiveDamage(attackDamage);
+        }
     }
 
 }

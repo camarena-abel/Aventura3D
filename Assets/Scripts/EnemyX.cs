@@ -4,12 +4,13 @@ using UnityEngine.AI;
 public class EnemyX : MonoBehaviour
 {
     NavMeshAgent agent;
+    SkinnedMeshRenderer skinnedMeshRenderer;
     Animator animator;
     float setDestinationTime;
+    float killedTime;
     protected float fotgotTarget = 0f;
     protected bool targetFound = false;
     protected SphereCollider proximityTriggerZone;
-    float attackTimeCounter = 0f;
 
     [SerializeField]
     int life = 100;
@@ -18,40 +19,47 @@ public class EnemyX : MonoBehaviour
     float setDestMaxTime = 2f;
 
     [SerializeField]
+    float forgotTime = 10f;
+
+    [SerializeField]
     protected Player target; // target del enemigo
+
+    [SerializeField]
+    protected LayerMask attackLayerMask;
 
     [SerializeField]
     float attackDistance = 1.2f;
 
     [SerializeField]
-    float attackTime = 0.2f;
+    protected int attackDamage = 10;
 
     [SerializeField]
-    float attackRadius = 0.5f;
+    protected Material dissolveMaterial;
 
     [SerializeField]
-    LayerMask attackLayerMask;
-
-    [SerializeField]
-    int attackDamage = 10;
-
-    [SerializeField]
-    float attackForward = 1f; // para calcular la posicion donde hará daño
-
-    [SerializeField]
-    float attackUp= 1f;       // para calcular la posicion donde hará daño
+    protected float dissolveTime = 5f;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+        skinnedMeshRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
         animator = transform.GetChild(0).GetComponent<Animator>();
         proximityTriggerZone = GetComponent<SphereCollider>();
-        setDestinationTime = setDestMaxTime;
+        setDestinationTime = setDestMaxTime;        
     }
 
     public bool IsDead()
     {
         return life <= 0;
+    }
+
+    public void KillEnemy()
+    {
+        skinnedMeshRenderer.materials = new Material[] { dissolveMaterial, dissolveMaterial };
+        animator.SetTrigger("Death");
+        agent.isStopped = true;
+        agent.enabled = false;
+        Destroy(gameObject, dissolveTime);
     }
 
     public void TakeDamage(int amount)
@@ -65,11 +73,7 @@ public class EnemyX : MonoBehaviour
         life -= amount;
         if (life <= 0)
         {
-            // muerto!
-            animator.SetTrigger("Death");
-            agent.isStopped = true;
-            agent.enabled = false;
-            Destroy(gameObject, 5f);
+            KillEnemy(); // muerto!
         } else
         {
             animator.SetTrigger("Hit");
@@ -80,26 +84,11 @@ public class EnemyX : MonoBehaviour
     {
         // si esta muerto, no se puede mover
         if (IsDead())
-            return;
-
-        // esta atacando?
-        if (attackTimeCounter > 0f)
         {
-            attackTimeCounter -= Time.deltaTime;
-            if (attackTimeCounter <= 0f)
-            {
-                // atacamos 1m hacia adelante y 1m hacia arriba de la posicion del enemigo
-                Vector3 attackPos = transform.position + transform.forward * attackForward + transform.up * attackUp;
-                Collider[] col = Physics.OverlapSphere(attackPos, attackRadius, attackLayerMask);
-                if (col.Length > 0)
-                {
-                    // hemos golpeado al player!
-                    Player play = target.GetComponent<Player>();
-                    play.ReceiveDamage(attackDamage);
-                }
-                attackTimeCounter = 0f;
-            }
-        }
+            killedTime += Time.deltaTime;
+            dissolveMaterial.SetFloat("_Strength", killedTime / dissolveTime);
+            return;
+        }            
 
         // obtenemos la velocidad (para la animacion de caminar
         float speed = agent.velocity.magnitude;
@@ -115,7 +104,6 @@ public class EnemyX : MonoBehaviour
                 agent.isStopped = true;
                 // le decimos que ataque
                 animator.SetTrigger("Attack");
-                attackTimeCounter = attackTime;
             }
 
             // busca el target (el sitio en el que esta)
@@ -125,6 +113,7 @@ public class EnemyX : MonoBehaviour
                 agent.SetDestination(target.transform.position);
                 agent.isStopped = false;
                 setDestinationTime = setDestMaxTime;
+                fotgotTarget = forgotTime;
             }
 
             // vamos olvidando al player
