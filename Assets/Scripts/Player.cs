@@ -189,6 +189,12 @@ public class Player : MonoBehaviour
                 lastTarget = hitInfo.collider.gameObject;
                 targetName = lastTarget.gameObject.name;
             }
+
+            if (hitInfo.collider.gameObject.tag == "Lever")
+            {
+                lastTarget = hitInfo.collider.gameObject;
+                targetName = "Palanca";
+            }
         }
         if (targetName != txtTarget.text)
         {
@@ -260,6 +266,12 @@ public class Player : MonoBehaviour
                         lastTarget.transform.localRotation = Quaternion.identity;
                         holdingSomething = true;
                     }
+                }
+
+                if (lastTarget.tag == "Lever")
+                {
+                    Lever lever = lastTarget.GetComponent<Lever>();
+                    lever.MoveLever();
                 }
             }
         }

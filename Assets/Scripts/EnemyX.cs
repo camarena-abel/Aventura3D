@@ -11,6 +11,9 @@ public class EnemyX : MonoBehaviour
     protected float fotgotTarget = 0f;
     protected bool targetFound = false;
     protected SphereCollider proximityTriggerZone;
+    protected bool patrolMode = true;
+    protected int patrolNextPoint = 0;
+    bool tieneDestino = false;
 
     [SerializeField]
     int life = 100;
@@ -38,6 +41,9 @@ public class EnemyX : MonoBehaviour
 
     [SerializeField]
     protected float dissolveTime = 5f;
+
+    [SerializeField]
+    protected Transform[] patrolRoute;
 
     void Start()
     {
@@ -80,6 +86,29 @@ public class EnemyX : MonoBehaviour
         }
     }
 
+    bool AgentLlegoAlDestino()
+    {
+        if (!tieneDestino) return true;
+
+        if (agent.pathPending)
+            return false;
+
+        if (agent.remainingDistance > agent.stoppingDistance)
+            return false;
+
+        if (agent.hasPath && agent.velocity.sqrMagnitude > 0f)
+            return false;
+
+        return true;
+    }
+
+    private void SetDestination(Vector3 v)
+    {
+        agent.SetDestination(v);
+        agent.isStopped = false;
+        tieneDestino = true;
+    }
+
     private void Update()
     {
         // si esta muerto, no se puede mover
@@ -105,13 +134,13 @@ public class EnemyX : MonoBehaviour
                 // le decimos que ataque
                 animator.SetTrigger("Attack");
             }
-
+            
             // busca el target (el sitio en el que esta)
             setDestinationTime -= Time.deltaTime;
             if (setDestinationTime <= 0f)
             {
-                agent.SetDestination(target.transform.position);
-                agent.isStopped = false;
+                patrolMode = false;
+                SetDestination(target.transform.position);                
                 setDestinationTime = setDestMaxTime;
                 fotgotTarget = forgotTime;
             }
@@ -121,12 +150,23 @@ public class EnemyX : MonoBehaviour
             if (fotgotTarget <= 0f)
             {
                 targetFound = false;
+                patrolMode = true;
             }
-
-
-
+            
         }
 
+        // estamos en modo patrulla?
+        if (patrolMode)
+        {
+            // si ya ha llegado, buscamos el siguiente destino
+            if (AgentLlegoAlDestino())
+            {
+                print(patrolNextPoint);
+                print(patrolRoute[patrolNextPoint].position);
+                SetDestination(patrolRoute[patrolNextPoint].position);
+                patrolNextPoint = (patrolNextPoint + 1) % patrolRoute.Length;
+            }
+        }
 
     }
 
