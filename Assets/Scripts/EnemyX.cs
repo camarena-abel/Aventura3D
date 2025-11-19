@@ -45,13 +45,20 @@ public class EnemyX : MonoBehaviour
     [SerializeField]
     protected Transform[] patrolRoute;
 
+    [SerializeField]
+    protected float patrolStoppingDistance = 0.1f;
+
+    [SerializeField]
+    protected float attackStoppingDistance = 1.25f;
+
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         skinnedMeshRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
         animator = transform.GetChild(0).GetComponent<Animator>();
         proximityTriggerZone = GetComponent<SphereCollider>();
-        setDestinationTime = setDestMaxTime;        
+        setDestinationTime = setDestMaxTime;
+        InitPatrolMode();
     }
 
     public bool IsDead()
@@ -82,7 +89,10 @@ public class EnemyX : MonoBehaviour
             KillEnemy(); // muerto!
         } else
         {
+            // animacion de impacto
             animator.SetTrigger("Hit");
+            // iniciar modo ataque
+            InitAttackMode();
         }
     }
 
@@ -107,6 +117,21 @@ public class EnemyX : MonoBehaviour
         agent.SetDestination(v);
         agent.isStopped = false;
         tieneDestino = true;
+    }
+
+    protected void InitAttackMode()
+    {
+        targetFound = true;
+        patrolMode = false;
+        agent.stoppingDistance = attackStoppingDistance;
+        fotgotTarget = 10f; // en 10 segundos olviadrá al player si no lo vuelve a ver
+    }
+
+    protected void InitPatrolMode()
+    {
+        targetFound = false;
+        patrolMode = true;
+        agent.stoppingDistance = patrolStoppingDistance;
     }
 
     private void Update()
@@ -149,8 +174,7 @@ public class EnemyX : MonoBehaviour
             fotgotTarget -= Time.deltaTime;
             if (fotgotTarget <= 0f)
             {
-                targetFound = false;
-                patrolMode = true;
+                InitPatrolMode();
             }
             
         }
@@ -161,8 +185,6 @@ public class EnemyX : MonoBehaviour
             // si ya ha llegado, buscamos el siguiente destino
             if (AgentLlegoAlDestino())
             {
-                print(patrolNextPoint);
-                print(patrolRoute[patrolNextPoint].position);
                 SetDestination(patrolRoute[patrolNextPoint].position);
                 patrolNextPoint = (patrolNextPoint + 1) % patrolRoute.Length;
             }

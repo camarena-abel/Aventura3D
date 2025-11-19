@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
+    Animator animator;
     AudioSource audioSrc;
     Rigidbody rb;
     float axisH;
@@ -45,6 +46,9 @@ public class Player : MonoBehaviour
     Image imgIcono;
 
     [SerializeField]
+    CanvasDamage canvasDamage;
+
+    [SerializeField]
     GameOver gameOver;
 
     [SerializeField]
@@ -76,6 +80,7 @@ public class Player : MonoBehaviour
 
     void Start()
     {
+        animator = GetComponent<Animator>();
         Cursor.lockState = CursorLockMode.Locked;
         audioSrc = GetComponent<AudioSource>();
         rb = GetComponent<Rigidbody>();
@@ -199,6 +204,13 @@ public class Player : MonoBehaviour
         if (targetName != txtTarget.text)
         {
             txtTarget.text = targetName;
+        }
+
+        // botón de agacharse
+        if (Input.GetButtonDown("Jump"))
+        {
+            bool crouch = animator.GetBool("Crouch");
+            animator.SetBool("Crouch", !crouch);
         }
 
         // si pulsa el boton de accion, recoge el objeto
@@ -381,6 +393,11 @@ public class Player : MonoBehaviour
         // reducir cantidad de vida
         GameState.gameData.life -= amount;
         audioSrc.PlayOneShot(soundHit);
+
+        // animacion de daño
+        animator.SetTrigger("Hit");
+        if (canvasDamage)
+            canvasDamage.PlayAnimation();
 
         // si se queda sin vida, game over
         if (GameState.gameData.life <= 0)

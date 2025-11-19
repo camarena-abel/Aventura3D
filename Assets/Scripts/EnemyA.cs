@@ -43,8 +43,7 @@ public class EnemyA : EnemyX
             {
                 if (detectionInfo.collider.gameObject.tag == "Player")
                 {
-                    targetFound = true;
-                    fotgotTarget = 10f; // en 10 segundos olviadrá al player si no lo vuelve a ver
+                    InitAttackMode();
                 }
             }
         }
